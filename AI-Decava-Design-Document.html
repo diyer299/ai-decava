@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Decava — High-Level Design Document</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 30px;
+      background: #fff;
+      color: #222;
+      line-height: 1.6;
+    }
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      border-bottom: 3px solid #2c5f8a;
+      padding-bottom: 12px;
+      color: #1a3a5c;
+    }
+    h2 {
+      font-size: 20px;
+      color: #2c5f8a;
+      margin-top: 36px;
+      border-bottom: 1px solid #d0d7de;
+      padding-bottom: 6px;
+    }
+    h3 {
+      font-size: 16px;
+      color: #333;
+      margin-top: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #c8ced3;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #2c5f8a;
+      color: #fff;
+      font-weight: 600;
+    }
+    tr:nth-child(even) {
+      background-color: #f4f7fa;
+    }
+    pre {
+      background: #f6f8fa;
+      border: 1px solid #d0d7de;
+      border-radius: 6px;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    code {
+      font-family: 'Consolas', 'Courier New', monospace;
+      background: #eef1f5;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #555;
+      font-size: 15px;
+      margin-top: -8px;
+      margin-bottom: 30px;
+    }
+    .diagram-label {
+      text-align: center;
+      font-style: italic;
+      color: #555;
+      font-size: 13px;
+      margin-top: -8px;
+      margin-bottom: 20px;
+    }
+    .section-intro {
+      color: #444;
+      margin-bottom: 12px;
+    }
+    @media print {
+      body { padding: 20px; font-size: 12px; }
+      h1 { font-size: 22px; }
+      h2 { font-size: 16px; break-after: avoid; }
+      pre { font-size: 11px; }
+      table { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>AI-Decava</h1>
+<p class="subtitle">High-Level Design Document — Three-Tier Web Application</p>
+
+<h2>1. Overview</h2>
+<p class="section-intro">
+  AI-Decava is a three-tier web application for managing and querying government assistance program resources.
+  It consists of a React/TypeScript frontend, a Python/FastAPI backend API, and a PostgreSQL database.
+</p>
+
+<h2>2. Architecture Diagram</h2>
+<pre>
++-----------------------------------------------------------------------+
+|                          FRONTEND  (Tier 1)                           |
+|                     React + TypeScript  (:3000)                       |
+|                                                                       |
+|   +--------------+   +------------------+   +---------------------+   |
+|   |  Home Page   |   | Resources Table  |   |    Login Page       |   |
+|   |     /        |   |  /sample-table   |   |     /login          |   |
+|   +--------------+   +------------------+   +---------------------+   |
+|                              |                        |               |
+|                     +--------+------------------------+               |
+|                     |  API Client (src/api/client.ts)                 |
+|                     |  Base URL: http://localhost:8000                 |
++---------------------|-------------------------------------------------+
+                      |  HTTP (JSON)
+                      |  CORS: localhost:3000
+                      v
++-----------------------------------------------------------------------+
+|                          BACKEND  (Tier 2)                            |
+|                    Python + FastAPI  (:8000)                           |
+|                                                                       |
+|   +---------------------------------------------------------------+   |
+|   |                     main.py  (FastAPI App)                     |   |
+|   |                                                                |   |
+|   |   GET  /api/health      -->  Health check                     |   |
+|   |   GET  /api/resources   -->  List all resources                |   |
+|   |   POST /api/login       -->  Login (placeholder)               |   |
+|   +---------------+-----------------------------------------------+   |
+|                   |                                                    |
+|   +---------------+----------+   +---------------------------------+  |
+|   |  models.py               |   |  schemas.py                     |  |
+|   |  SQLAlchemy ORM Models   |   |  Pydantic Validation Schemas    |  |
+|   |  - Resource              |   |  - ResourceSchema               |  |
+|   +---------------+----------+   |  - LoginRequest/Response        |  |
+|                   |              +---------------------------------+  |
+|   +---------------+----------+                                        |
+|   |  database.py             |                                        |
+|   |  SQLAlchemy Engine       |                                        |
+|   |  Session Management      |                                        |
+|   +---------------+----------+                                        |
++-------------------|---------------------------------------------------+
+                    |  SQLAlchemy / psycopg2
+                    v
++-----------------------------------------------------------------------+
+|                         DATABASE  (Tier 3)                            |
+|                     PostgreSQL  (:5432)                                |
+|                     Database: decava                                   |
+|                                                                       |
+|   +---------------------------------------------------------------+   |
+|   |  Table: resources                                              |   |
+|   |                                                                |   |
+|   |  id (PK) | jurisdiction | program_name | beneficiary | ...    |   |
+|   |  phone   | link (URL)   | eligibility  | min_age     | ...    |   |
+|   +---------------------------------------------------------------+   |
+|                                                                       |
+|   Seed data: SNAP, Medicaid, CalWORKs, SSDI, SSI                     |
++-----------------------------------------------------------------------+
+</pre>
+<p class="diagram-label">Figure 1 — Three-tier architecture overview</p>
+
+<h2>3. Data Flow</h2>
+<pre>
+ User Browser                   FastAPI Server                  PostgreSQL
+ -----------                    --------------                  ----------
+      |                              |                              |
+      |  GET /api/resources          |                              |
+      |-----------------------------&gt;|                              |
+      |                              |  SELECT * FROM resources     |
+      |                              |-----------------------------&gt;|
+      |                              |                              |
+      |                              |&lt;-----------------------------|
+      |                              |       [rows]                 |
+      |&lt;-----------------------------|                              |
+      |       [JSON array]           |                              |
+      |                              |                              |
+      |  POST /api/login             |                              |
+      |-----------------------------&gt;|                              |
+      |&lt;-----------------------------|                              |
+      |  {success: false}            |                              |
+</pre>
+<p class="diagram-label">Figure 2 — Request/response sequence</p>
+
+<h2>4. Project Structure</h2>
+<pre>
+ai-decava/
++-- frontend/               # Tier 1 -- React TypeScript SPA
+|   +-- src/
+|   |   +-- api/
+|   |   |   +-- client.ts       # API client (fetchResources, login)
+|   |   +-- pages/
+|   |   |   +-- SampleTable.tsx  # Resources table with clickable links
+|   |   |   +-- Login.tsx        # Login form
+|   |   +-- App.tsx              # Router and navigation
+|   |   +-- App.css              # Global styles
+|   +-- package.json
+|   +-- tsconfig.json
+|
++-- src/                    # Tier 2 -- Python FastAPI backend
+|   +-- main.py                 # App entry point, routes, CORS
+|   +-- database.py             # SQLAlchemy engine and session
+|   +-- models.py               # ORM model (Resource)
+|   +-- schemas.py              # Pydantic schemas
+|
++-- tests/                  # Backend test suite
+|   +-- test_api.py             # pytest + FastAPI TestClient
+|
++-- init_db.sql             # Tier 3 -- PostgreSQL schema + seed data
++-- requirements.txt        # Python dependencies
++-- README.md
+</pre>
+
+<h2>5. Technology Stack</h2>
+<table>
+  <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+  <tr><td>Frontend</td><td>React 19 + TypeScript</td><td>Single-page application</td></tr>
+  <tr><td>Routing</td><td>React Router DOM 6</td><td>Client-side page navigation</td></tr>
+  <tr><td>Build Tool</td><td>Create React App</td><td>Dev server, bundling, testing</td></tr>
+  <tr><td>Backend</td><td>FastAPI</td><td>REST API framework</td></tr>
+  <tr><td>ORM</td><td>SQLAlchemy 2.0</td><td>Database object mapping</td></tr>
+  <tr><td>Validation</td><td>Pydantic 2.0</td><td>Request/response schema validation</td></tr>
+  <tr><td>Database</td><td>PostgreSQL</td><td>Relational data storage</td></tr>
+  <tr><td>DB Driver</td><td>psycopg2</td><td>Python-PostgreSQL adapter</td></tr>
+  <tr><td>Testing</td><td>pytest / React Testing Library</td><td>Backend + frontend tests</td></tr>
+</table>
+
+<h2>6. API Endpoints</h2>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Response</th></tr>
+  <tr><td>GET</td><td><code>/api/health</code></td><td>Health check</td><td><code>{"status": "healthy"}</code></td></tr>
+  <tr><td>GET</td><td><code>/api/resources</code></td><td>List all resources</td><td><code>ResourceSchema[]</code></td></tr>
+  <tr><td>POST</td><td><code>/api/login</code></td><td>Login (placeholder)</td><td><code>LoginResponse</code></td></tr>
+</table>
+
+<h2>7. Database Schema: <code>resources</code></h2>
+<table>
+  <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>id</code></td><td>SERIAL (PK)</td><td>Auto-incrementing primary key</td></tr>
+  <tr><td><code>jurisdiction</code></td><td>VARCHAR(255)</td><td>Federal / State level</td></tr>
+  <tr><td><code>program_name</code></td><td>VARCHAR(255)</td><td>Name of the assistance program</td></tr>
+  <tr><td><code>beneficiary</code></td><td>VARCHAR(255)</td><td>Target population</td></tr>
+  <tr><td><code>phone</code></td><td>VARCHAR(50)</td><td>Contact phone number</td></tr>
+  <tr><td><code>link</code></td><td>TEXT</td><td>URL to official program website</td></tr>
+  <tr><td><code>eligibility_requirements</code></td><td>TEXT</td><td>Eligibility criteria description</td></tr>
+  <tr><td><code>minimum_age</code></td><td>VARCHAR(50)</td><td>Minimum age requirement</td></tr>
+  <tr><td><code>disability</code></td><td>VARCHAR(255)</td><td>Disability requirements</td></tr>
+  <tr><td><code>insurance</code></td><td>VARCHAR(255)</td><td>Insurance requirements</td></tr>
+  <tr><td><code>caregiver_requirement</code></td><td>TEXT</td><td>Caregiver-related requirements</td></tr>
+  <tr><td><code>income_amount</code></td><td>VARCHAR(255)</td><td>Income threshold</td></tr>
+  <tr><td><code>income_sources</code></td><td>VARCHAR(255)</td><td>Types of income considered</td></tr>
+  <tr><td><code>residency</code></td><td>VARCHAR(255)</td><td>Residency requirements</td></tr>
+  <tr><td><code>medical_status</code></td><td>TEXT</td><td>Medical status requirements</td></tr>
+  <tr><td><code>program_enrollment_dependencies</code></td><td>TEXT</td><td>Prerequisite program enrollments</td></tr>
+  <tr><td><code>citizenship</code></td><td>VARCHAR(255)</td><td>Citizenship requirements</td></tr>
+  <tr><td><code>criminal_records</code></td><td>VARCHAR(255)</td><td>Criminal record restrictions</td></tr>
+</table>
+
+<h2>8. Getting Started</h2>
+
+<h3>Prerequisites</h3>
+<ul>
+  <li>Python 3.11+</li>
+  <li>Node.js 18+</li>
+  <li>PostgreSQL 15+</li>
+</ul>
+
+<h3>Step 1 — Database Setup</h3>
+<pre>
+psql -U postgres -c "CREATE DATABASE decava;"
+psql -U postgres -d decava -f init_db.sql
+</pre>
+
+<h3>Step 2 — Backend</h3>
+<pre>
+pip install -r requirements.txt
+uvicorn src.main:app --reload --port 8000
+</pre>
+
+<h3>Step 3 — Frontend</h3>
+<pre>
+cd frontend
+npm install
+npm start
+</pre>
+<p>The app will be available at <code>http://localhost:3000</code> with the API at <code>http://localhost:8000</code>.</p>
+
+<h3>Step 4 — Run Tests</h3>
+<pre>
+# Backend
+pytest tests/ -v
+
+# Frontend
+cd frontend &amp;&amp; npm test
+</pre>
+
+<h2>9. Environment Variables</h2>
+<table>
+  <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>DATABASE_URL</code></td><td><code>postgresql://postgres:postgres@localhost:5432/decava</code></td><td>PostgreSQL connection string</td></tr>
+  <tr><td><code>REACT_APP_API_URL</code></td><td><code>http://localhost:8000</code></td><td>Backend API base URL</td></tr>
+</table>
+
+</body>
+</html>
